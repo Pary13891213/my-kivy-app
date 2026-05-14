@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Build APK with Buildozer
-        uses: digreatbrian/buildozer-action@v2
+        uses: HaseenaSait/buildozer-action@v1
         with:
           project-dir: .
           buildozer-cmd: buildozer android debug
