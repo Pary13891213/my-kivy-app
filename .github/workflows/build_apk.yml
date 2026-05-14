@@ -5,33 +5,50 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04  # استفاده از نسخه پایدار
+    runs-on: ubuntu-22.04
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platforms;android-33 build-tools;33.0.0'
-      
-      - name: Install Buildozer
+      - name: Set up Java
         run: |
           sudo apt update
+          sudo apt install -y openjdk-17-jdk
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+      
+      - name: Install dependencies
+        run: |
           sudo apt install -y git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
           pip install --upgrade pip
           pip install buildozer cython
       
-      - name: Build with Buildozer
+      - name: Configure Buildozer
         run: |
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          # ایجاد پوشه‌های مورد نیاز
+          mkdir -p ~/.buildozer/android/platform
+          
+          # دانلود مستقیم Android SDK
+          cd ~/.buildozer/android/platform
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          rm commandlinetools-linux-11076708_latest.zip
+          mkdir -p android-sdk/cmdline-tools
+          mv cmdline-tools android-sdk/cmdline-tools/latest
+          
+          # تنظیم مسیرها
+          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
+          
+          # پذیرش مجوزها
+          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
+          
+          # نصب build-tools و platform
+          $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" > /dev/null 2>&1
+      
+      - name: Build APK
+        run: |
           buildozer android debug
       
       - name: Upload APK
