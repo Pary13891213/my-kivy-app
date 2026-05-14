@@ -5,17 +5,30 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-20.04    # تغییر به نسخه قدیمی‌تر که libtinfo5 دارد
+    runs-on: ubuntu-latest  # به جای ubuntu-20.04
     
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Buildozer-Kivy-Apk-Creator
-        uses: wildspider57389928/Buildozer-Kivy-APK_Creator@4.0.0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          project-dir: .
-          command: buildozer android debug
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip
+          pip install buildozer cython
+      
+      - name: Build APK
+        run: |
+          buildozer init
+          buildozer android debug
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-apk
+          path: bin/*.apk
