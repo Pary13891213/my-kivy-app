@@ -5,29 +5,37 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04   # استفاده از نسخه قدیمی‌تر اوبونتو که libtinfo5 دارد
+    runs-on: ubuntu-22.04  # استفاده از نسخه پایدار
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          python-version: '3.10'
+          distribution: 'temurin'
+          java-version: '17'
       
-      - name: Install Buildozer dependencies
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-33 build-tools;33.0.0'
+      
+      - name: Install Buildozer
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+          sudo apt install -y git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
           pip install --upgrade pip
           pip install buildozer cython
       
       - name: Build with Buildozer
-        run: buildozer android debug
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          buildozer android debug
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-kivy-app
+          name: my-app
           path: bin/*.apk
